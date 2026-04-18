@@ -1,0 +1,62 @@
+name: Deploy n8n Stack to rogue-wolf-n8n-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to run'
+        required: true
+        default: 'bootstrap'
+        type: choice
+        options:
+          - bootstrap
+          - start
+          - stop
+          - restart
+          - status
+          - logs
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 178.104.132.122 >> ~/.ssh/known_hosts
+
+      - name: Run bootstrap
+        if: github.event.inputs.action == 'bootstrap'
+        run: |
+          ssh root@178.104.132.122 \
+            'bash <(curl -fsSL https://raw.githubusercontent.com/ZPO-2024/n8n/master/deploy/setup.sh) 2>&1 | tee /var/log/n8n-setup.log'
+
+      - name: Start stack
+        if: github.event.inputs.action == 'start'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose up -d'
+
+      - name: Stop stack
+        if: github.event.inputs.action == 'stop'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose down'
+
+      - name: Restart stack
+        if: github.event.inputs.action == 'restart'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose restart'
+
+      - name: Stack status
+        if: github.event.inputs.action == 'status'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose ps && docker compose top'
+
+      - name: Stack logs
+        if: github.event.inputs.action == 'logs'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose logs --tail=100'
