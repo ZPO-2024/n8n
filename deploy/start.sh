@@ -81,6 +81,7 @@ services:
       - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
       - GENERIC_TIMEZONE=America/New_York
       - N8N_LOG_LEVEL=info
+      - N8N_SECURE_COOKIE=false
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
