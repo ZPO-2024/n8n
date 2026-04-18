@@ -16,6 +16,7 @@ on:
           - status
           - logs
           - fix-encryption
+          - full-reset
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -61,4 +62,8 @@ jobs:
       - name: Fix encryption key mismatch
         if: github.event.inputs.action == 'fix-encryption'
         run: |
-          ssh root@178.104.132.122 'docker stop n8n-n8n-1 2>/dev/null; docker volume ls | grep n8n; VOLUME=$(docker volume ls -q | grep n8n_n8n); if [ -n "$VOLUME" ]; then docker run --rm -v $VOLUME:/data alpine sh -c "rm -f /data/config && echo Removed config"; fi; cd /opt/n8n && docker compose up -d && sleep 5 && docker compose logs --tail=20'
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose down; VOLUME=$(docker volume ls -q | grep n8n_n8n_data); if [ -n "$VOLUME" ]; then docker run --rm -v $VOLUME:/data alpine sh -c "rm -f /data/config && echo Removed config"; fi; docker compose up -d && sleep 5 && docker compose logs --tail=20'
+      - name: Full reset (wipe all data and start fresh)
+        if: github.event.inputs.action == 'full-reset'
+        run: |
+          ssh root@178.104.132.122 'cd /opt/n8n && docker compose down -v && rm -f .env && bash <(curl -fsSL https://raw.githubusercontent.com/ZPO-2024/n8n/master/deploy/start.sh) 2>&1 | tee /var/log/n8n-reset.log'
