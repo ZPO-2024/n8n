@@ -1,18 +1,20 @@
 #!/bin/bash
 # start.sh - Configure .env and launch n8n stack (IP-based, no domain required)
+# If .env already exists, reuse existing credentials to avoid encryption key mismatch
 set -e
 
 N8N_DIR=/opt/n8n
 SERVER_IP=178.104.132.122
 
-# Generate secure random passwords
-DB_PASS=$(openssl rand -hex 24)
-N8N_ENC_KEY=$(openssl rand -hex 32)
-N8N_USER=admin
-N8N_PASS=$(openssl rand -hex 12)
+# Only generate new credentials if .env doesn't exist
+if [ ! -f "$N8N_DIR/.env" ]; then
+  echo "Generating new credentials..."
+  DB_PASS=$(openssl rand -hex 24)
+  N8N_ENC_KEY=$(openssl rand -hex 32)
+  N8N_PASS=$(openssl rand -hex 12)
 
-# Write .env
-cat > $N8N_DIR/.env << EOF
+  # Write .env
+  cat > $N8N_DIR/.env << EOF
 # Server
 SERVER_IP=${SERVER_IP}
 DOMAIN=${SERVER_IP}
@@ -32,11 +34,16 @@ N8N_DEFAULT_USER_PASSWORD=${N8N_PASS}
 WEBHOOK_URL=http://${SERVER_IP}:5678
 N8N_EDITOR_BASE_URL=http://${SERVER_IP}:5678
 EOF
+  echo "Credentials generated and saved to .env"
+  echo "n8n Password: ${N8N_PASS}"
+else
+  echo "Reusing existing .env credentials"
+  source $N8N_DIR/.env
+fi
 
 # Write docker-compose override for IP-only (no Caddy TLS needed yet)
 cat > $N8N_DIR/docker-compose.yml << 'COMPOSE'
 version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -53,7 +60,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   n8n:
     image: n8nio/n8n:latest
     restart: unless-stopped
@@ -80,7 +86,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
 volumes:
   postgres_data:
   n8n_data:
@@ -98,13 +103,11 @@ docker compose up -d
 echo "Waiting for n8n to start..."
 sleep 15
 docker compose ps
-
 echo ""
 echo "========================================"
 echo "n8n is live!"
-echo "URL:      http://${SERVER_IP}:5678"
-echo "Email:    admin@roguewave.local"
-echo "Password: ${N8N_PASS}"
+echo "URL: http://${SERVER_IP}:5678"
+echo "Email: admin@roguewave.local"
 echo "========================================"
 echo ""
-echo "SAVE THESE CREDENTIALS - shown once only"
+echo "SAVE THESE CREDENTIALS - check .env file for password"
