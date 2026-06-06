@@ -110,7 +110,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJSON(inputs.pre-generated-matrix || needs.matrix.outputs.matrix) }}
+        include: ${{ fromJSON(inputs.pre-generated-matrix != '' && inputs.pre-generated-matrix || needs.matrix.outputs.matrix != '' && needs.matrix.outputs.matrix || '[]') }}
     name: Shard ${{ matrix.shard }}
 
     steps:
