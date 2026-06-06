@@ -35,7 +35,7 @@ on:
       runner:
         description: 'GitHub runner to use'
         required: false
-        default: 'blacksmith-2vcpu-ubuntu-2204'
+        default: 'self-hosted'
         type: string
       use-custom-orchestration:
         description: 'Use duration-based custom orchestration instead of Playwright sharding'
@@ -81,7 +81,7 @@ env:
 jobs:
   matrix:
     if: ${{ inputs.pre-generated-matrix == '' }}
-    runs-on: ${{ vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-2vcpu-ubuntu-2204' }}
+    runs-on: ${{ vars.RUNNER_PROVIDER == 'self-hosted' && 'self-hosted' || vars.RUNNER_PROVIDER == 'github' && 'ubuntu-latest' || 'blacksmith-2vcpu-ubuntu-2204' }}
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
     steps:
