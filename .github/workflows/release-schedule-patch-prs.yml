@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '0 8 * * 2-5' # 9am CET (UTC+1), Tuesday–Friday
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   create-patch-prs:
     name: Create patch release PR (${{ matrix.track }})
