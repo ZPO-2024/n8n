@@ -11,6 +11,10 @@ on:
         type: string
         default: 'master'
 
+permissions:
+  packages: write
+  contents: read
+
 jobs:
   e2e-vm-expressions:
     uses: ./.github/workflows/test-e2e-ci-reusable.yml
